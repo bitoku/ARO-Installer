@@ -149,6 +149,11 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 		}
 	}
 
+	rhcosImage, err := rhcos.Image(ctx)
+	if err != nil {
+		return nil, nil, errors.WithStack(err)
+	}
+
 	installConfig := &installconfig.InstallConfig{
 		AssetBase: installconfig.AssetBase{
 			Config: &types.InstallConfig{
@@ -190,6 +195,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 								DiskEncryptionSet: masterDiskEncryptionSet,
 								DiskSizeGB:        1024,
 							},
+							OSImage: *rhcosImage,
 						},
 					},
 					Hyperthreading: "Enabled",
@@ -209,6 +215,7 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 									DiskEncryptionSet: workerDiskEncryptionSet,
 									DiskSizeGB:        int32(m.oc.Properties.WorkerProfiles[0].DiskSizeGB),
 								},
+								OSImage: *rhcosImage,
 							},
 						},
 						Hyperthreading: "Enabled",
@@ -282,11 +289,6 @@ func (m *manager) generateInstallConfig(ctx context.Context) (*installconfig.Ins
 
 	if m.oc.Properties.IngressProfiles[0].Visibility == api.VisibilityPrivate {
 		installConfig.Config.Publish = types.InternalPublishingStrategy
-	}
-
-	installConfig.Config.Azure.Image, err = rhcos.Image(ctx)
-	if err != nil {
-		return nil, nil, errors.WithStack(err)
 	}
 
 	releaseImageOverride := os.Getenv("OPENSHIFT_INSTALL_RELEASE_IMAGE_OVERRIDE")
